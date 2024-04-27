@@ -1,5 +1,5 @@
 import hashlib
-from db.models import User, Characteristic, Score
+from db.models import User, Characteristic, Score, Test, Question, Answer
 from main import db
 
 def hash_pass(password):
@@ -50,3 +50,37 @@ def login_user(login, password):
     
   return None
     
+def find_test_by_tilte(title):
+  return Test.query.filter(Test.title == title).first()
+
+def create_answer(content, points, characteristic_id, question):
+  characteristic = getCharacteristicsById(characteristic_id)
+  new_answer = Answer(content=content, points=points, characteristic_a=characteristic, question=question)
+
+  db.session.add(new_answer)
+  db.session.commit()
+
+def craete_question(content, answers, test):
+  new_question = Question(content=content, test=test)
+
+  db.session.add(new_question)
+  db.session.commit()
+
+  for answer in answers:
+    create_answer(answer.get('content'), answer.get('points'), answer.get('characteristic_id'), new_question)
+
+def create_test(title, description, questions):
+  test = find_test_by_tilte(title)
+  if test:
+    return {"error": "asdasd"}
+  
+  new_test = Test(title=title, description=description)
+  db.session.add(new_test)
+  db.session.commit()
+
+  for question in questions:
+    craete_question(question.get('content'), question.get('answers'), new_test)  
+
+def get_tests():
+  tests = Test.query.all()
+  return tests

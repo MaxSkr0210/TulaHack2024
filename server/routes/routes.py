@@ -2,7 +2,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import request,make_response, jsonify, send_from_directory
 from db.models import User
-from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById
+from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById, create_test, get_tests
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 from flask_jwt_extended import create_access_token
@@ -115,3 +115,20 @@ def register_routes(app, db):
     # Access the identity of the current user with get_jwt_identity
     current_user = get_jwt_identity()
     return jsonify(logged_in_as=current_user), 200
+
+  @app.get("/test")
+  def get_test():
+    test =  get_tests()
+    return jsonify(test), 200
+    
+
+  @app.post("/test")
+  def add_test():
+    new_test = request.json
+    title = new_test.get('title')
+    description = new_test.get('description')
+    questions = new_test.get('questions')
+
+    create_test(title, description, questions)
+
+    return jsonify({"test": "asd"}), 200
