@@ -1,0 +1,7 @@
+/server/__pycache__
+/server/migrations
+/server/env
+/server/.env
+/client/node_modules
+/client/.vscode
+/client/dist
