@@ -190,8 +190,8 @@ def register_routes(app, db):
 
     return jsonify({"test": "asd"}), 200
   
-  @app.put("/score/vr/<str:login>")
-  def upgrade_score(login):
+  @app.put("/score/vr/<login>")
+  def upgrade_score_vr(login):
     json = request.json
     results = json.get('results')
     for characteristic in results:
@@ -231,6 +231,7 @@ def register_routes(app, db):
         "content": lesson.content,
         "sod": lesson.characteristic_id,
         "min_point": lesson.min_point,
+        "img_path": lesson.img_path
       }
 
       lessons.append(obj)
@@ -248,6 +249,7 @@ def register_routes(app, db):
       "content": lesson.content,
       "sod": lesson.characteristic_id,
       "min_point": lesson.min_point,
+      "img_path": lesson.img_path
     }
     return jsonify(obj)
 
@@ -296,6 +298,7 @@ def register_routes(app, db):
       "content": lesson.content,
       "sod": lesson.characteristic_id,
       "min_point": lesson.min_point,
+      "img_path": lesson.img_path,  
       }
 
       lessons.append(obj)

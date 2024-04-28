@@ -51,6 +51,7 @@
 import { onMounted, ref } from "vue";
 import { FwbFileInput, FwbInput, FwbTextarea, FwbSelect } from "flowbite-vue";
 import { useLessonStore } from "../store/lesson";
+import router from "../router";
 
 const store = useLessonStore();
 
@@ -74,6 +75,7 @@ const createLesson = async (e: Event) => {
   formData.append("img_path", file.value);
 
   await store.createLesson(formData);
+  router.push("/");
 };
 
 onMounted(async () => {

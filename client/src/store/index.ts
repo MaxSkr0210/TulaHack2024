@@ -11,11 +11,16 @@ export const useAuthStore = defineStore("auth", {
     getterUser: (state: StateTree) => state.user,
   },
   actions: {
+    async createUser(newUser: FormData) {
+      const res = await axios.post("http://localhost:5000/reg", newUser);
+    },
     async login(login: string, password: string) {
       const res = await axios.post("http://localhost:5000/login", {
         login,
         password,
       });
+
+      console.log(res);
 
       localStorage.setItem("jwt", res.data.access_token);
       localStorage.setItem("refresh_jwt", res.data.refresh_token);
@@ -32,6 +37,8 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async getUser() {
+      import.meta.env.VITE_SERVER_URL;
+
       if (!localStorage.getItem("jwt")) return;
       const auth = "Bearer " + localStorage.getItem("jwt");
 

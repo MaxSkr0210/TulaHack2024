@@ -20,6 +20,7 @@ export const useLessonStore = defineStore("lesson", {
       const res = await axios.get(
         `http://localhost:5000/lesson/recomenfation?characteristic_id=${characteristic_id}&point=${point}`,
       );
+      console.log(res.data);
 
       if (res.data.length === 0) {
         await this.fetchLessons();

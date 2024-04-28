@@ -2,7 +2,7 @@
   <div class="lesson">
     <fwb-card
       img-alt="Desk"
-      img-src="https://flowbite.com/docs/images/blog/image-1.jpg"
+      :img-src="host + `/img/` + lesson.img_path"
       variant="image"
     >
       <div class="p-5">
@@ -24,6 +24,8 @@
 import { FwbCard } from "flowbite-vue";
 import { Lesson } from "../types/Lesson";
 import router from "../router";
+
+const host = import.meta.env.VITE_SERVER_URL;
 
 const props = defineProps<{
   lesson: Lesson;

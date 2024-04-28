@@ -4,4 +4,5 @@ export interface Lesson {
   description: string;
   content: string;
   characteristics_ids: number[];
+  img_path: string;
 }

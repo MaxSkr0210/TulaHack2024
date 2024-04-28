@@ -6,6 +6,7 @@ import { useAuthStore } from "../store";
 import LessonView from "../views/LessonView.vue";
 import GameView from "../views/GameView.vue";
 import CreateLessonView from "../views/CreateLessonView.vue";
+import CreateUserView from "../views/CreateUserView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -50,11 +51,19 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/create_lesson",
-    name: "game",
+    name: "create_lesson",
     meta: {
       Auth: true,
     },
     component: CreateLessonView,
+  },
+  {
+    path: "/create_user",
+    name: "create_user",
+    meta: {
+      Auth: true,
+    },
+    component: CreateUserView,
   },
 ];
 

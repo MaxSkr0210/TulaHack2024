@@ -38,7 +38,7 @@ def creteScore(login):
   user = users[0]
   characteristics = getCharacteristics()
   for characteristic in characteristics:
-    score = Score(score_amount=0, user=user, characteristic=characteristic)
+    score = Score(score_amount=-1, user=user, characteristic=characteristic)
     db.session.add(score)
     db.session.commit()
 

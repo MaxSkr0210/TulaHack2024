@@ -3,6 +3,7 @@ import { FwbImg, FwbNavbar } from "flowbite-vue";
 import { useAuthStore } from "./store";
 import { ref, watch } from "vue";
 
+const host = import.meta.env.VITE_SERVER_URL;
 const authStore = useAuthStore();
 
 const user = ref();
@@ -24,7 +25,7 @@ watch(
         <fwb-img
           class="w-36"
           alt="ava"
-          :src="`http://localhost:5000/img/` + user.avatar_path"
+          :src="host + `/img/` + user.avatar_path"
         />
       </template>
     </fwb-navbar>
