@@ -4,6 +4,8 @@ import AuthView from "../views/AuthView.vue";
 import TestView from "../views/TestView.vue";
 import { useAuthStore } from "../store";
 import LessonView from "../views/LessonView.vue";
+import GameView from "../views/GameView.vue";
+import CreateLessonView from "../views/CreateLessonView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -22,14 +24,6 @@ const routes: Array<RouteRecordRaw> = [
     },
     component: AuthView,
   },
-  // {
-  //   path: "/tests",
-  //   name: "tests",
-  //   meta: {
-  //     Auth: true,
-  //   },
-  //   component: TestsView,
-  // },
   {
     path: "/test",
     name: "test",
@@ -45,6 +39,22 @@ const routes: Array<RouteRecordRaw> = [
       Auth: true,
     },
     component: LessonView,
+  },
+  {
+    path: "/game",
+    name: "game",
+    meta: {
+      Auth: true,
+    },
+    component: GameView,
+  },
+  {
+    path: "/create_lesson",
+    name: "game",
+    meta: {
+      Auth: true,
+    },
+    component: CreateLessonView,
   },
 ];
 
@@ -69,7 +79,11 @@ router.beforeEach(async (to, from) => {
       }
     } catch (error) {
       await store.refreshToken();
+      return "/";
     }
+  } else {
+    if (!to.meta.Auth) return true;
+    else return "/auth";
   }
 });
 

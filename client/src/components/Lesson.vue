@@ -30,6 +30,8 @@ const props = defineProps<{
 }>();
 
 const goToLesson = (e: Event) => {
+  console.log(178);
+
   e.preventDefault();
   router.push("/lessons/" + props.lesson.id);
 };

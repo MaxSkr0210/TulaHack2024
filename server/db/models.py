@@ -9,6 +9,7 @@ class User(db.Model):
   coins = db.Column(db.Integer, nullable=False) 
   first_name = db.Column(db.VARCHAR(50), nullable=False) 
   last_name = db.Column(db.VARCHAR(50), nullable=False) 
+  role = db.Column(db.VARCHAR(5), nullable=False) 
   avatar_path = db.Column(db.TEXT, nullable=False) 
   scors = db.relationship('Score', backref='user', lazy=True)
 
@@ -19,7 +20,7 @@ class Characteristic(db.Model):
   name = db.Column(db.VARCHAR(255), nullable=False, unique=True)
   scors = db.relationship('Score', backref='characteristic', lazy=True)
   answers = db.relationship('Answer', backref='characteristic_a', lazy=True)
-
+  Lessons = db.relationship('Lesson', backref='characteristic_l', lazy=True)
 class Score(db.Model):
   __tablename__ = 'score'
     
@@ -53,11 +54,6 @@ class Answer(db.Model):
   question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)  
   characteristic_id = db.Column(db.Integer, db.ForeignKey('characteristic.id'), nullable=False)  
 
-lesson_characteristic = db.Table('lesson_characteristic',
-  db.Column('lesson_id', db.Integer, db.ForeignKey('lesson.id')),
-  db.Column('characteristic_id', db.Integer, db.ForeignKey('characteristic.id'))
-)
-
 class Lesson(db.Model):
   __tablename__ = 'lesson'
 
@@ -65,5 +61,6 @@ class Lesson(db.Model):
   title = db.Column(db.VARCHAR(60), nullable=False)
   description = db.Column(db.VARCHAR(60), nullable=False)
   content = db.Column(db.Text, nullable=False)
-  sod = db.relationship("Characteristic", secondary=lesson_characteristic, backref="lesson_characteristic")
-
+  img_path = db.Column(db.TEXT, nullable=False) 
+  min_point = db.Column(db.Integer, nullable=False)
+  characteristic_id = db.Column(db.Integer, db.ForeignKey('characteristic.id'), nullable=False)  

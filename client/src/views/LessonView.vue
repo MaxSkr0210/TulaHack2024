@@ -17,6 +17,8 @@ const store = useLessonStore();
 
 onMounted(async () => {
   const id = Number(route.params.id);
+  console.log(id);
+
   await store.fetchLessonById(id);
   lesson.value = store.getLesson;
 });

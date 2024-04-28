@@ -41,6 +41,8 @@ export const useAuthStore = defineStore("auth", {
         },
       });
 
+      console.log(res.data.logged_in_as);
+
       this.user = await res.data.logged_in_as;
     },
   },

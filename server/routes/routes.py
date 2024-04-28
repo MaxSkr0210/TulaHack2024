@@ -2,7 +2,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import request,make_response, jsonify, send_from_directory
 from db.models import User
-from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById, create_test, get_tests, serialize, create_lesson, get_lessons, find_user_by_id, get_score_by_user_id, get_lesson_by_id
+from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById, create_test, get_tests, serialize, create_lesson, get_lessons, find_user_by_id, get_score_by_user_id, get_lesson_by_id, get_recomendation_lessons,find_characteristic, get_score_by_user_login
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 from flask_jwt_extended import create_access_token
@@ -12,6 +12,7 @@ from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 
 def allowed_file(filename):
+    print(filename)
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -39,30 +40,6 @@ def register_routes(app, db):
   def refresh_token():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    user = find_user_by_id(identity)[0]
-    scors = user.scors
-
-    scores = []
-
-    for score in scors:
-      ch = getCharacteristicsById(score.characteristic_id)
-      scores.append({
-        "id": score.id,
-        "score_amount": score.score_amount,
-        "characteristic": {
-          "id": ch.id,
-          "name": ch.name
-        }
-      })
-    obj = {
-      "id": user.id,
-      "login": user.login, 
-      "first_name": user.first_name, 
-      "last_name":user.last_name, 
-      "avatar_path": user.avatar_path, 
-      "scores": scores
-    }
-
     return jsonify(access_token=access_token)
           
   
@@ -88,7 +65,7 @@ def register_routes(app, db):
     password = json.get('password')
     first_name = json.get('first_name')
     last_name = json.get('last_name')
-    avatar_path = filename
+    avatar_path = file.filename
 
     create_user(login, password, first_name, last_name, avatar_path)
 
@@ -132,7 +109,8 @@ def register_routes(app, db):
         "first_name": user.first_name, 
         "last_name":user.last_name, 
         "avatar_path": user.avatar_path, 
-        "scores": scores
+        "scores": scores,
+        "role": user.role
       }
 
       access_token = create_access_token(identity=obj)
@@ -171,10 +149,27 @@ def register_routes(app, db):
       "first_name": user.first_name, 
       "last_name":user.last_name, 
       "avatar_path": user.avatar_path, 
-      "scores": scores
+      "scores": scores,
+      "role": user.role
     }
 
     return jsonify(logged_in_as=obj), 200
+
+  @app.get("/characteristic")
+  def get_characteristic():
+
+    ch = find_characteristic()
+
+    chs = []
+
+    for c in ch:
+      obj = {
+        "id": c.id,
+        "name": c.name
+      }
+      chs.append(obj)
+
+    return jsonify(chs)
 
   @app.get("/test")
   def get_test():
@@ -183,7 +178,6 @@ def register_routes(app, db):
     tests = serialize(test)
 
     return jsonify(tests), 200
-    
 
   @app.post("/test")
   def add_test():
@@ -196,6 +190,18 @@ def register_routes(app, db):
 
     return jsonify({"test": "asd"}), 200
   
+  @app.put("/score/vr/<str:login>")
+  def upgrade_score(login):
+    json = request.json
+    results = json.get('results')
+    for characteristic in results:
+      score = get_score_by_user_login(login, characteristic.get('characteristics_id'))
+      score.score_amount += characteristic['score']
+
+    db.session.commit()
+
+    return jsonify({"test": ""})
+
   @app.put("/score/<int:user_id>")
   def upgrade_score(user_id):
     json = request.json
@@ -213,20 +219,18 @@ def register_routes(app, db):
   def find_lessons():
     les = get_lessons()
 
+    print(les)
+
     lessons = []
 
     for lesson in les:
-      ids = []
-
-      for id in lesson.sod:
-        ids.append(id.id)
-
       obj = {
         "id": lesson.id,
         "title": lesson.title,
         "description": lesson.description,
         "content": lesson.content,
-        "ids": ids
+        "sod": lesson.characteristic_id,
+        "min_point": lesson.min_point,
       }
 
       lessons.append(obj)
@@ -237,28 +241,63 @@ def register_routes(app, db):
   def get_lesson(id):
     lesson = get_lesson_by_id(id)
 
-    ids = []
-
-    for id in lesson.sod:
-      ids.append(id.id)
-
     obj = {
       "id": lesson.id,
       "title": lesson.title,
       "description": lesson.description,
       "content": lesson.content,
-      "ids": ids
+      "sod": lesson.characteristic_id,
+      "min_point": lesson.min_point,
     }
     return jsonify(obj)
 
   @app.post("/lesson")
   def add_lesson():
-    new_test = request.json
+    new_test = request.form
     title = new_test.get('title')
     description = new_test.get('description')
     content = new_test.get('content')
-    sod = new_test.get('ids')
+    sod = int(new_test.get('sod')) 
+    min_point = int(new_test.get('min_point'))
 
-    create_lesson(title, description, content, sod)
+    if 'img_path' not in request.files:
+      print('No file part')
+      return jsonify(error="as"), 200
+
+    file = request.files['img_path']
+
+    print(file)
+
+    if file and allowed_file(file.filename):
+      filename = secure_filename(file.filename)
+      file_path = os.path.join(app.static_folder, 'img', filename)
+      file.save(file_path)
+
+    img_path = file.filename
+
+    create_lesson(title, description, content, sod, min_point, img_path)
 
     return jsonify(new_test="asd"), 200
+
+  @app.get("/lesson/recomenfation")
+  def get_recomendation():
+    characteristic_id = request.args.get('characteristic_id')
+    point = request.args.get('point')
+    les = get_recomendation_lessons(characteristic_id, point)
+
+    lessons = []
+
+    for lesson in les:
+
+      obj = {
+      "id": lesson.id,
+      "title": lesson.title,
+      "description": lesson.description,
+      "content": lesson.content,
+      "sod": lesson.characteristic_id,
+      "min_point": lesson.min_point,
+      }
+
+      lessons.append(obj)
+
+    return jsonify(lessons), 200

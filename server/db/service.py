@@ -19,6 +19,8 @@ def hash_pass(password):
 def getCharacteristicsById(id):
   return Characteristic.query.filter(Characteristic.id == id).first()
 
+def find_characteristic():
+  return Characteristic.query.all()
 
 def getCharacteristics():
   characteristics = Characteristic.query.all()
@@ -26,6 +28,10 @@ def getCharacteristics():
 
 def get_score_by_user_id(user_id, characteristic_id):
   return Score.query.filter_by(user_id=user_id, characteristic_id=characteristic_id).first()
+
+def get_score_by_user_login(login, characteristic_id):
+  user = find_user_by_login(login)[0]
+  return Score.query.filter_by(user_id=user.id, characteristic_id=characteristic_id).first()
 
 def creteScore(login):
   users = find_user_by_login(login)
@@ -46,7 +52,7 @@ def find_user_by_login(login):
 def create_user(login, password, first_name, last_name, avatar_path):
   hash = hash_pass(password)
 
-  user = User(login=login, password=hash, avatar_path=avatar_path, first_name=first_name, last_name=last_name, coins=0)
+  user = User(login=login, password=hash, avatar_path=avatar_path, first_name=first_name, last_name=last_name, coins=-1, role="user")
 
   db.session.add(user)
   db.session.commit()
@@ -103,14 +109,14 @@ def get_tests():
 def get_lesson_by_id(id):
   return Lesson.query.filter_by(id=id).first()
 
-def create_lesson(title, description, content, sod):
-  new_lesson = Lesson(title=title, description=description, content=content)
+def create_lesson(title, description, content, sod, min_point, img_path):
+  c = getCharacteristicsById(sod)
+  new_lesson = Lesson(title=title, description=description, content=content, characteristic_l=c, min_point=min_point, img_path=img_path)
   db.session.add(new_lesson)
-  for s in sod:
-    c = getCharacteristicsById(s)
-    new_lesson.sod.append(c)
-  
   db.session.commit()
 
 def get_lessons():
   return Lesson.query.all()
+
+def get_recomendation_lessons(characteristic_id, point):
+  return Lesson.query.filter(Lesson.characteristic_id == characteristic_id, Lesson.min_point >= point).all()

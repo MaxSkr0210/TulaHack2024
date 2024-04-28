@@ -1,6 +1,5 @@
 <template>
   <div class="container">
-    <i class="fas fa-utensils"></i>
     <span
       class="num"
       :data-val="score.score_amount"
