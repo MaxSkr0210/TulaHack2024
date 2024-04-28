@@ -1,6 +1,14 @@
 import hashlib
-from db.models import User, Characteristic, Score, Test, Question, Answer
+from db.models import User, Characteristic, Score, Test, Question, Answer, Lesson
 from main import db
+
+def serialize(model):
+    if isinstance(model, list):
+        return [serialize(item) for item in model]
+    elif hasattr(model, '__table__'):
+        return {c.name: getattr(model, c.name) for c in model.__table__.columns}
+    else:
+        raise TypeError("Этот объект не является экземпляром модели SQLAlchemy")
 
 def hash_pass(password):
   password_encoded = password.encode('utf-8')
@@ -16,6 +24,9 @@ def getCharacteristics():
   characteristics = Characteristic.query.all()
   return characteristics
 
+def get_score_by_user_id(user_id, characteristic_id):
+  return Score.query.filter_by(user_id=user_id, characteristic_id=characteristic_id).first()
+
 def creteScore(login):
   users = find_user_by_login(login)
   user = users[0]
@@ -24,6 +35,10 @@ def creteScore(login):
     score = Score(score_amount=0, user=user, characteristic=characteristic)
     db.session.add(score)
     db.session.commit()
+
+def find_user_by_id(id):
+  return User.query.filter(User.id == id).all()
+
 
 def find_user_by_login(login):
   return User.query.filter(User.login == login).all()
@@ -84,3 +99,18 @@ def create_test(title, description, questions):
 def get_tests():
   tests = Test.query.all()
   return tests
+
+def get_lesson_by_id(id):
+  return Lesson.query.filter_by(id=id).first()
+
+def create_lesson(title, description, content, sod):
+  new_lesson = Lesson(title=title, description=description, content=content)
+  db.session.add(new_lesson)
+  for s in sod:
+    c = getCharacteristicsById(s)
+    new_lesson.sod.append(c)
+  
+  db.session.commit()
+
+def get_lessons():
+  return Lesson.query.all()

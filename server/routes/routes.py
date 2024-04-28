@@ -2,10 +2,11 @@ import os
 from werkzeug.utils import secure_filename
 from flask import request,make_response, jsonify, send_from_directory
 from db.models import User
-from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById, create_test, get_tests
+from db.service import find_user_by_login, create_user, login_user, getCharacteristicsById, create_test, get_tests, serialize, create_lesson, get_lessons, find_user_by_id, get_score_by_user_id, get_lesson_by_id
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
@@ -23,7 +24,6 @@ def register_routes(app, db):
 
   @app.route('/img/<path:filename>')
   def get_image(filename):
-    print(filename)
     return send_from_directory('static', 'img/' + filename)
 
   @app.get("/ping")
@@ -33,6 +33,38 @@ def register_routes(app, db):
   @app.get("/")
   def test():
     return User.query.all(),200 
+  
+  @app.get("/refresh_token")
+  @jwt_required(refresh=True)
+  def refresh_token():
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity)
+    user = find_user_by_id(identity)[0]
+    scors = user.scors
+
+    scores = []
+
+    for score in scors:
+      ch = getCharacteristicsById(score.characteristic_id)
+      scores.append({
+        "id": score.id,
+        "score_amount": score.score_amount,
+        "characteristic": {
+          "id": ch.id,
+          "name": ch.name
+        }
+      })
+    obj = {
+      "id": user.id,
+      "login": user.login, 
+      "first_name": user.first_name, 
+      "last_name":user.last_name, 
+      "avatar_path": user.avatar_path, 
+      "scores": scores
+    }
+
+    return jsonify(access_token=access_token)
+          
   
   @app.post("/reg")
   def register():
@@ -95,6 +127,7 @@ def register_routes(app, db):
         })
 
       obj = {
+        "id": user.id,
         "login": user.login, 
         "first_name": user.first_name, 
         "last_name":user.last_name, 
@@ -102,9 +135,13 @@ def register_routes(app, db):
         "scores": scores
       }
 
-      token = create_access_token(identity=obj)
+      access_token = create_access_token(identity=obj)
+      refersh_token = create_refresh_token(user.id)
 
-      return jsonify({"access_token": token})
+      res = make_response()
+      res.set_cookie("jwt", refersh_token, domain="localhost")
+
+      return jsonify({"access_token": access_token, "refresh_token": refersh_token})
     
     return {"error": "фывфыв"}
 
@@ -112,14 +149,40 @@ def register_routes(app, db):
   @app.get("/protected")
   @jwt_required()
   def protected():
-    # Access the identity of the current user with get_jwt_identity
     current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
+    user = find_user_by_id(current_user)[0]
+    scors = user.scors
+
+    scores = []
+
+    for score in scors:
+      ch = getCharacteristicsById(score.characteristic_id)
+      scores.append({
+        "id": score.id,
+        "score_amount": score.score_amount,
+        "characteristic": {
+          "id": ch.id,
+          "name": ch.name
+        }
+      })
+    obj = {
+      "id": user.id,
+      "login": user.login, 
+      "first_name": user.first_name, 
+      "last_name":user.last_name, 
+      "avatar_path": user.avatar_path, 
+      "scores": scores
+    }
+
+    return jsonify(logged_in_as=obj), 200
 
   @app.get("/test")
   def get_test():
-    test =  get_tests()
-    return jsonify(test), 200
+    test = get_tests()
+
+    tests = serialize(test)
+
+    return jsonify(tests), 200
     
 
   @app.post("/test")
@@ -132,3 +195,70 @@ def register_routes(app, db):
     create_test(title, description, questions)
 
     return jsonify({"test": "asd"}), 200
+  
+  @app.put("/score/<int:user_id>")
+  def upgrade_score(user_id):
+    json = request.json
+    results = json.get('results')
+    for characteristic in results:
+      score = get_score_by_user_id(user_id, characteristic.get('characteristics_id'))
+      score.score_amount += characteristic['score'] + 1
+
+    db.session.commit()
+
+    return jsonify({"test": ""})
+
+
+  @app.get("/lesson")
+  def find_lessons():
+    les = get_lessons()
+
+    lessons = []
+
+    for lesson in les:
+      ids = []
+
+      for id in lesson.sod:
+        ids.append(id.id)
+
+      obj = {
+        "id": lesson.id,
+        "title": lesson.title,
+        "description": lesson.description,
+        "content": lesson.content,
+        "ids": ids
+      }
+
+      lessons.append(obj)
+
+    return jsonify(lessons), 200
+
+  @app.get("/lesson/<int:id>")
+  def get_lesson(id):
+    lesson = get_lesson_by_id(id)
+
+    ids = []
+
+    for id in lesson.sod:
+      ids.append(id.id)
+
+    obj = {
+      "id": lesson.id,
+      "title": lesson.title,
+      "description": lesson.description,
+      "content": lesson.content,
+      "ids": ids
+    }
+    return jsonify(obj)
+
+  @app.post("/lesson")
+  def add_lesson():
+    new_test = request.json
+    title = new_test.get('title')
+    description = new_test.get('description')
+    content = new_test.get('content')
+    sod = new_test.get('ids')
+
+    create_lesson(title, description, content, sod)
+
+    return jsonify(new_test="asd"), 200
